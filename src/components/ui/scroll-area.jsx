@@ -13,7 +13,7 @@ const ScrollArea = React.forwardRef(({ className, children, ...props }, ref) => 
     </ScrollAreaPrimitive.Viewport>
     <ScrollBar />
     <ScrollAreaPrimitive.Corner />
-  </ScrollAreaPrimitive.Root>
+  </ScrollAreaPrimitive.Root> 
 ))
 ScrollArea.displayName = ScrollAreaPrimitive.Root.displayName
 
