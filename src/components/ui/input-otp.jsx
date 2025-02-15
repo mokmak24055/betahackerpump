@@ -11,7 +11,7 @@ const InputOTP = React.forwardRef(({ className, containerClassName, ...props }, 
     className={cn("disabled:cursor-not-allowed", className)}
     {...props} />
 ))
-InputOTP.displayName = "InputOTP"
+InputOTP.displayName = "InputOTP" 
 
 const InputOTPGroup = React.forwardRef(({ className, ...props }, ref) => (
   <div ref={ref} className={cn("flex items-center", className)} {...props} />
