@@ -1,12 +1,12 @@
 
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { TrendingUp, Users, Brain } from 'lucide-react';
+import { TrendingUp, Users } from 'lucide-react';
 
 const TokenStats = () => {
   const stats = [
     { label: "Market Cap", value: "", icon: TrendingUp },
-    { label: "Holders", value: "", icon: Brain },
+    { label: "Holders", value: "", icon: Users },
     { label: "24h Volume", value: "", icon: Users },
   ];
 
