@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { ArrowUpRight, ArrowDownRight, LineChart as ChartIcon } from 'lucide-react';
 import MatrixBackground from '@/components/MatrixBackground';
 
-const MAJOR_COINS = ['bitcoin', 'ethereum', 'solana', 'cardano', 'binance-coin'];
+const MAJOR_COINS = ['bitcoin', 'ethereum', 'solana', 'cardano', 'binance-coin']; 
 
 const fetchMarketData = async () => {
   const response = await fetch(
