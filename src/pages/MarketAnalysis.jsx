@@ -8,8 +8,3 @@ import { ArrowUpRight, ArrowDownRight, LineChart as ChartIcon } from 'lucide-rea
 import MatrixBackground from '@/components/MatrixBackground';
 
 const MAJOR_COINS = ['bitcoin', 'ethereum', 'solana', 'cardano', 'binance-coin'];
-
-const fetchMarketData = async () => {
-  const response = await fetch(
-    `https://api.coingecko.com/api/v3/simple/price?ids=${MAJOR_COINS.join(',')}&vs_currencies=usd&include_24hr_change=true&include_market_cap=true`
-  );
