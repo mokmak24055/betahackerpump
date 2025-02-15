@@ -1,11 +1,26 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Bot, TrendingUp } from 'lucide-react';
+import { TrendingUp, Bot, Twitter } from 'lucide-react';
 
 const HeroSection = () => {
   return (
     <div className="relative z-10 py-16 text-center">
+      <a 
+        href="https://x.com/HackerPump" 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="inline-block mb-6"
+      >
+        <Button
+          variant="outline"
+          size="sm"
+          className="border-primary/20 text-primary hover:bg-primary/10 group"
+        >
+          <Twitter className="w-4 h-4 mr-2" />
+          Follow us on X
+        </Button>
+      </a>
       <div className="flex items-center justify-center gap-2 mb-4">
         <Bot className="w-12 h-12 text-pink-500 animate-pulse" />
         <h1 className="text-6xl font-bold text-primary text-glow animate-pulse">
@@ -13,7 +28,8 @@ const HeroSection = () => {
         </h1>
       </div>
       <p className="text-xl mb-4 text-primary/80 max-w-2xl mx-auto">
-        The first decentralized news aggregator powered by the community. Where technology meets DeFi.
+        The first AI-powered decentralized news aggregator and sentiment analysis platform. 
+        Where artificial intelligence meets DeFi to reshape the future of information.
       </p>
       <div className="flex gap-4 justify-center mb-8">
         <Button 
@@ -22,6 +38,11 @@ const HeroSection = () => {
         >
           Buy $HACK <TrendingUp className="ml-2 group-hover:translate-y-[-2px] transition-transform" />
         </Button>
+      </div>
+      <div className="flex flex-wrap justify-center gap-4 text-primary/70 text-sm">
+        <span>Community-Driven</span>
+        <span>•</span>
+        <span>DeFi-Integrated</span>
       </div>
     </div>
   );
