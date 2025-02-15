@@ -1,1 +1,2 @@
 
+import { Newspaper, LineChart } from "lucide-react";
