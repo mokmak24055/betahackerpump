@@ -149,7 +149,7 @@ const Index = () => {
       return story.title.toLowerCase().includes(searchTerm.toLowerCase());
     }) || [];
 
-  const sortedStories = sortStories(filteredStories);
+  const sortedStories = sortStories(filteredStories).slice(0, 12); // Limit to 12 stories
 
   return (
     <>
@@ -200,4 +200,4 @@ const Index = () => {
   );
 };
 
-export default Index; 
+export default Index;
