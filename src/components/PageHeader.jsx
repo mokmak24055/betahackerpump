@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Terminal, RefreshCw } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
@@ -8,20 +8,33 @@ const PageHeader = ({ onRefresh, isLoading }) => {
   const [typingEffect, setTypingEffect] = useState('');
   const { toast } = useToast();
 
-  useEffect(() => {
+  const animateText = useCallback(() => {
     const text = "HackerPump Terminal";
-    let i = 0;
-    const typingInterval = setInterval(() => {
-      if (i < text.length) {
-        setTypingEffect(text.substring(0, i + 1));
-        i++;
-      } else {
-        clearInterval(typingInterval);
-      }
-    }, 150); // Increased the interval from 100ms to 150ms for smoother typing
+    let startTime = null;
+    let frame = 0;
 
-    return () => clearInterval(typingInterval);
+    const animate = (timestamp) => {
+      if (!startTime) startTime = timestamp;
+      const progress = timestamp - startTime;
+      const newFrame = Math.floor(progress / 100); // Control speed here
+
+      if (newFrame > frame) {
+        frame = newFrame;
+        if (frame <= text.length) {
+          setTypingEffect(text.substring(0, frame));
+          requestAnimationFrame(animate);
+        }
+      } else {
+        requestAnimationFrame(animate);
+      }
+    };
+
+    requestAnimationFrame(animate);
   }, []);
+
+  useEffect(() => {
+    animateText();
+  }, [animateText]);
 
   const handleRefresh = async () => {
     await onRefresh();
