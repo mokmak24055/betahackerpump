@@ -5,13 +5,13 @@ import { TrendingUp, Users } from 'lucide-react';
 
 const TokenStats = () => {
   const stats = [
-    { label: "Market Cap", value: "", icon: TrendingUp },
-    { label: "Holders", value: "", icon: Users },
-    { label: "24h Volume", value: "", icon: Users },
+    { label: "Market Cap", value: "$1.2M", icon: TrendingUp },
+    { label: "Holders", value: "7", icon: Users },
+    { label: "24h Volume", value: "2,541", icon: TrendingUp },
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
       {stats.map((stat) => (
         <Card key={stat.label} className="bg-card/90 border-primary backdrop-blur-sm hover:shadow-pink-500/20 transition-all duration-300">
           <CardContent className="p-4">
