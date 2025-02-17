@@ -1,5 +1,4 @@
 
-
 import { useEffect, useState } from 'react';
 import { Terminal, RefreshCw } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -14,12 +13,12 @@ const PageHeader = ({ onRefresh, isLoading }) => {
     let i = 0;
     const typingInterval = setInterval(() => {
       if (i < text.length) {
-        setTypingEffect((prev) => prev + text.charAt(i));
+        setTypingEffect(text.substring(0, i + 1));
         i++;
       } else {
         clearInterval(typingInterval);
       }
-    }, 100);
+    }, 150); // Increased the interval from 100ms to 150ms for smoother typing
 
     return () => clearInterval(typingInterval);
   }, []);
