@@ -5,9 +5,9 @@ import { TrendingUp, Users } from 'lucide-react';
 
 const TokenStats = () => {
   const stats = [
-    { label: "Market Cap", value: "$1.2M", icon: TrendingUp },
-    { label: "Holders", value: "7", icon: Users },
-    { label: "24h Volume", value: "2,541", icon: TrendingUp },
+    { label: "Market Cap", value: "", icon: TrendingUp },
+    { label: "Holders", value: "", icon: Users },
+    { label: "24h Volume", value: "", icon: TrendingUp },
   ];
 
   return (
