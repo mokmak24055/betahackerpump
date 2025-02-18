@@ -11,9 +11,9 @@ const HeroSection = () => {
           href="https://x.com/HackerPump" 
           target="_blank" 
           rel="noopener noreferrer"
-          className="inline-flex items-center justify-center bg-primary/10 hover:bg-primary/20 rounded-full p-2 transition-colors"
+          className="inline-block"
         >
-          <Twitter className="w-6 h-6 text-primary" />
+          <Twitter className="h-5 w-5 text-primary hover:text-primary/80 transition-colors" />
         </a>
       </div>
       <div className="flex items-center justify-center gap-2 mb-4">
@@ -35,6 +35,8 @@ const HeroSection = () => {
         </Button>
       </div>
       <div className="flex flex-wrap justify-center gap-4 text-primary/70 text-sm">
+        <span className="flex items-center">AI-Powered</span>
+        <span>•</span>
         <span>Community-Driven</span>
         <span>•</span>
         <span>DeFi-Integrated</span>
