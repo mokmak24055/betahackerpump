@@ -8,33 +8,32 @@ const PageHeader = ({ onRefresh, isLoading }) => {
   const [typingEffect, setTypingEffect] = useState('');
   const { toast } = useToast();
 
-  const animateText = useCallback(() => {
+  const startTypingAnimation = useCallback(() => {
     const text = "HackerPump Terminal";
-    let startTime = null;
-    let frame = 0;
+    let currentIndex = 0;
+    setTypingEffect('');
 
-    const animate = (timestamp) => {
-      if (!startTime) startTime = timestamp;
-      const progress = timestamp - startTime;
-      const newFrame = Math.floor(progress / 100); // Control speed here
-
-      if (newFrame > frame) {
-        frame = newFrame;
-        if (frame <= text.length) {
-          setTypingEffect(text.substring(0, frame));
-          requestAnimationFrame(animate);
-        }
-      } else {
-        requestAnimationFrame(animate);
+    const interval = setInterval(() => {
+      if (currentIndex === text.length) {
+        clearInterval(interval);
+        return;
       }
-    };
 
-    requestAnimationFrame(animate);
+      setTypingEffect(text.slice(0, currentIndex + 1));
+      currentIndex++;
+    }, 100);
+
+    return interval;
   }, []);
 
   useEffect(() => {
-    animateText();
-  }, [animateText]);
+    const interval = startTypingAnimation();
+    
+    return () => {
+      clearInterval(interval);
+      setTypingEffect('');
+    };
+  }, [startTypingAnimation]);
 
   const handleRefresh = async () => {
     await onRefresh();
@@ -48,7 +47,8 @@ const PageHeader = ({ onRefresh, isLoading }) => {
     <div className="flex items-center justify-between mb-6">
       <h1 className="text-4xl font-bold text-primary text-glow flex items-center">
         <Terminal className="mr-2" />
-        {typingEffect}<span className="animate-pulse">_</span>
+        <span>{typingEffect}</span>
+        <span className="animate-pulse ml-[2px]">_</span>
       </h1>
       <Button
         onClick={handleRefresh}
