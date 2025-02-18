@@ -7,31 +7,26 @@ import { useToast } from "@/components/ui/use-toast";
 const PageHeader = ({ onRefresh, isLoading }) => {
   const [typingEffect, setTypingEffect] = useState('');
   const { toast } = useToast();
+  const fullText = "HackerPump Terminal";
 
   useEffect(() => {
-    const text = "HackerPump Terminal";
-    let currentText = '';
+    setTypingEffect(''); // Reset text on mount
     let currentIndex = 0;
-
-    const typingInterval = setInterval(() => {
-      if (currentIndex <= text.length) {
-        currentText = text.slice(0, currentIndex);
-        setTypingEffect(currentText);
+    
+    const timer = setInterval(() => {
+      if (currentIndex <= fullText.length) {
+        setTypingEffect(fullText.slice(0, currentIndex));
         currentIndex++;
       } else {
-        // Reset typing effect when complete
-        clearInterval(typingInterval);
-        // Ensure the full text is displayed
-        setTypingEffect(text);
+        clearInterval(timer);
       }
-    }, 100);
+    }, 150); // Increased delay for more reliable typing
 
-    // Cleanup interval on component unmount
     return () => {
-      clearInterval(typingInterval);
-      setTypingEffect(text); // Ensure full text is shown when unmounting
+      clearInterval(timer);
+      setTypingEffect(fullText); // Ensure full text is shown on unmount
     };
-  }, []); // Empty dependency array ensures effect runs only once on mount
+  }, []);
 
   const handleRefresh = async () => {
     await onRefresh();
@@ -45,7 +40,7 @@ const PageHeader = ({ onRefresh, isLoading }) => {
     <div className="flex items-center justify-between mb-6">
       <h1 className="text-4xl font-bold text-primary text-glow flex items-center">
         <Terminal className="mr-2" />
-        {typingEffect}<span className="animate-pulse">_</span>
+        {typingEffect || fullText}<span className="animate-pulse">_</span>
       </h1>
       <Button
         onClick={handleRefresh}
