@@ -37,13 +37,13 @@ const Roadmap = () => {
   return (
     <section className="py-16 container mx-auto px-4">
       <div className="text-center mb-12">
-        <h2 className="text-4xl font-bold text-primary text-glow mb-4">Roadmap</h2>
+        <h2 className="text-4xl font-bold text-primary text-glow mb-4">AI-Driven Roadmap</h2>
         <p className="text-primary/70 max-w-2xl mx-auto">
-          Our strategic vision for revolutionizing decentralized news and market analysis
+          Our strategic vision for revolutionizing decentralized news and market analysis through artificial intelligence
         </p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {phases.map((phase) => (
+        {phases.map((phase, index) => (
           <Card key={phase.phase} className="bg-card/90 border-primary/20 backdrop-blur-sm hover:shadow-pink-500/20 transition-all duration-300 relative overflow-hidden">
             <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-pink-500 to-transparent"></div>
             <CardHeader className="relative">
@@ -58,7 +58,7 @@ const Roadmap = () => {
             </CardHeader>
             <CardContent>
               <ul className="space-y-4">
-                {phase.items.map((item) => (
+                {phase.items.map((item, itemIndex) => (
                   <li key={item} className="text-primary/80 flex items-start gap-3">
                     <span className="w-2 h-2 mt-2 bg-pink-500 rounded-full flex-shrink-0"></span>
                     <span className="flex-1">{item}</span>
