@@ -20,6 +20,7 @@ const Index = () => {
   const [sortBy, setSortBy] = useState('points');
   const [selectedCrypto, setSelectedCrypto] = useState('all');
   const [trendAnalysis, setTrendAnalysis] = useState(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { toast } = useToast();
 
   const { 
@@ -30,15 +31,50 @@ const Index = () => {
     isFetching 
   } = useNewsData();
 
+  const updateTrendAnalysis = async (stories) => {
+    setIsAnalyzing(true);
+    try {
+      console.log("Starting new trend analysis calculation...");
+      const analysis = await analyzeTrends(stories);
+      console.log("New trend analysis complete:", analysis);
+      setTrendAnalysis(analysis);
+      toast({
+        title: "Analysis Updated",
+        description: "Market trend analysis has been refreshed with latest data",
+      });
+    } catch (error) {
+      console.error("Error updating trend analysis:", error);
+      toast({
+        title: "Analysis Error",
+        description: "Failed to update market analysis",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   useEffect(() => {
     if (data?.hits) {
-      console.log("News data received:", data.hits.length, "stories"); // Debug log
-      analyzeTrends(data.hits).then(analysis => {
-        console.log("Trend analysis result:", analysis); // Debug log
-        setTrendAnalysis(analysis);
-      });
+      updateTrendAnalysis(data.hits);
     }
   }, [data]);
+
+  const handleRefresh = async () => {
+    try {
+      const result = await refetch();
+      if (result.data?.hits) {
+        await updateTrendAnalysis(result.data.hits);
+      }
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+      toast({
+        title: "Refresh Error",
+        description: "Failed to refresh market data",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleVote = (storyId) => {
     toast({
@@ -53,7 +89,7 @@ const Index = () => {
     <>
       <div className="container mx-auto p-4 bg-background/80 relative z-10 min-h-screen">
         <MatrixBackground />
-        <PageHeader onRefresh={refetch} isLoading={isFetching} />
+        <PageHeader onRefresh={handleRefresh} isLoading={isFetching || isAnalyzing} />
         <HeroSection />
         <TokenStats />
         
@@ -74,7 +110,6 @@ const Index = () => {
           onVote={handleVote}
         />
 
-        {/* Added debug comment and made the container more visible */}
         <div id="trend-analysis-container" className="mt-12 mb-16 border-4 border-primary p-4">
           <h2 className="text-2xl font-bold text-primary mb-4">Market Trend Analysis</h2>
           <TrendAnalysis trendAnalysis={trendAnalysis} />
