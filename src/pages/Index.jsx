@@ -38,9 +38,14 @@ const Index = () => {
       const analysis = await analyzeTrends(stories);
       console.log("New trend analysis complete:", analysis);
       setTrendAnalysis(analysis);
+      // Update crypto prices (in a real app, this would fetch from an API)
+      const now = new Date();
+      MAJOR_CRYPTOCURRENCIES[0].currentPrice = 95480.50 + (Math.random() * 200 - 100);
+      MAJOR_CRYPTOCURRENCIES[1].currentPrice = 192.35 + (Math.random() * 4 - 2);
+      
       toast({
         title: "Analysis Updated",
-        description: "Market trend analysis has been refreshed with latest data",
+        description: `Market trend analysis refreshed at ${now.toLocaleTimeString()}`,
       });
     } catch (error) {
       console.error("Error updating trend analysis:", error);
@@ -110,9 +115,10 @@ const Index = () => {
           onVote={handleVote}
         />
 
-        <div id="trend-analysis-container" className="mt-12 mb-16 border-4 border-primary p-4">
+        <div id="trend-analysis-container" className="mt-12 mb-16 space-y-8">
           <h2 className="text-2xl font-bold text-primary mb-4">Market Trend Analysis</h2>
-          <TrendAnalysis trendAnalysis={trendAnalysis} />
+          <TrendAnalysis trendAnalysis={trendAnalysis} selectedCrypto="bitcoin" />
+          <TrendAnalysis trendAnalysis={trendAnalysis} selectedCrypto="solana" />
         </div>
 
         <Roadmap />
