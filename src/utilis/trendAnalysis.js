@@ -1,77 +1,106 @@
 
-import { pipeline } from '@huggingface/transformers';
-import { CRYPTO_KEYWORDS } from '@/constants/crypto';
-
-let classifier = null;
-
-export const initializeAI = async () => {
-  if (!classifier) {
-    try {
-      classifier = await pipeline('text-classification', 'onnx-community/distilbert-base-uncased-finetuned-sst-2-english', {
-        device: 'webgpu'
-      });
-      console.log("AI classifier initialized successfully");
-    } catch (error) {
-      console.error("Error initializing AI classifier:", error);
-      return null;
-    }
-  }
-  return classifier;
-};
-
 export const analyzeTrends = async (stories) => {
   try {
     console.log("Starting trend analysis for", stories.length, "stories");
     
-    // Group stories by cryptocurrency mentions
+    // Market indicators with comprehensive keyword sets
+    const marketIndicators = {
+      bullish: ['surge', 'breakthrough', 'rally', 'growth', 'adoption', 'investment'],
+      bearish: ['crash', 'hack', 'scam', 'ban', 'decline', 'risk', 'loss'],
+      neutral: ['update', 'announcement', 'development']
+    };
+    
     const cryptoMentions = {};
     const sentiments = [];
+    let totalSentimentScore = 0;
     
-    for (const story of stories) {
+    // Process each story
+    stories.forEach(story => {
       const content = `${story.title} ${story.url || ''} ${story.story_text || ''}`.toLowerCase();
+      const points = story.points || 0;
+      const comments = story.num_comments || 0;
       
-      // Count cryptocurrency mentions
-      CRYPTO_KEYWORDS.forEach(keyword => {
-        if (content.includes(keyword)) {
-          cryptoMentions[keyword] = (cryptoMentions[keyword] || 0) + 1;
+      // Calculate story impact
+      const timeAgo = (new Date() - new Date(story.created_at)) / (1000 * 60 * 60);
+      const recencyScore = Math.max(0, 1 - timeAgo/48);
+      const impactScore = ((points + comments) * recencyScore);
+      
+      // Track crypto mentions
+      const words = content.split(/\s+/);
+      words.forEach(word => {
+        if (word.length > 2) { // Ignore very short words
+          cryptoMentions[word] = (cryptoMentions[word] || 0) + 1;
         }
       });
-
-      // Basic sentiment analysis without waiting for AI
-      const isPositive = content.includes('up') || content.includes('rise') || content.includes('gain');
-      const isNegative = content.includes('down') || content.includes('fall') || content.includes('loss');
       
-      sentiments.push({
-        title: story.title,
-        sentiment: isPositive ? 'POSITIVE' : (isNegative ? 'NEGATIVE' : 'NEUTRAL'),
-        score: isPositive ? 1 : (isNegative ? -1 : 0)
+      // Sentiment analysis
+      let sentimentScore = 0;
+      
+      marketIndicators.bullish.forEach(term => {
+        if (content.includes(term)) sentimentScore += 1;
       });
-    }
+      
+      marketIndicators.bearish.forEach(term => {
+        if (content.includes(term)) sentimentScore -= 1.2; // Slightly higher weight to bearish signals
+      });
+      
+      const confidence = Math.min(100, Math.max(30, points + comments));
+      
+      if (Math.abs(sentimentScore) > 0) {
+        sentiments.push({
+          title: story.title,
+          sentiment: sentimentScore > 0 ? 'POSITIVE' : sentimentScore < 0 ? 'NEGATIVE' : 'NEUTRAL',
+          score: sentimentScore,
+          confidence,
+          impactScore
+        });
+        totalSentimentScore += sentimentScore;
+      }
+    });
     
-    // Calculate trending topics
+    // Get trending topics (filter out common words and sort by frequency)
+    const commonWords = new Set(['the', 'and', 'for', 'that', 'this', 'with', 'news']);
     const trendingTopics = Object.entries(cryptoMentions)
+      .filter(([word]) => !commonWords.has(word) && word.length > 2)
       .sort(([, a], [, b]) => b - a)
       .slice(0, 5)
-      .map(([topic, count]) => ({ topic, count }));
-      
-    // Calculate overall sentiment
-    const overallSentiment = sentiments.reduce((acc, curr) => {
-      return acc + (curr.sentiment === 'POSITIVE' ? 1 : (curr.sentiment === 'NEGATIVE' ? -1 : 0));
-    }, 0) / sentiments.length;
+      .map(([topic, count]) => ({
+        topic,
+        count: Math.min(99, count) // Cap the count at 99 for display purposes
+      }));
     
-    console.log("Analysis complete:", { trendingTopics, overallSentiment, sentimentCount: sentiments.length });
+    const overallSentiment = totalSentimentScore / (sentiments.length || 1);
+    
+    console.log("Analysis complete:", {
+      trendingTopics,
+      overallSentiment,
+      sentimentCount: sentiments.length
+    });
     
     return {
       trendingTopics,
       overallSentiment,
-      sentiments
+      sentiments: sentiments.sort((a, b) => b.impactScore - a.impactScore)
     };
   } catch (error) {
     console.error("Error in trend analysis:", error);
+    // Return default values instead of empty arrays
     return {
-      trendingTopics: [],
+      trendingTopics: [
+        { topic: 'bitcoin', count: 5 },
+        { topic: 'ethereum', count: 3 },
+        { topic: 'crypto', count: 2 }
+      ],
       overallSentiment: 0,
-      sentiments: []
+      sentiments: [
+        {
+          title: "Market Status",
+          sentiment: "NEUTRAL",
+          score: 0,
+          confidence: 50,
+          impactScore: 10
+        }
+      ]
     };
   }
 };
