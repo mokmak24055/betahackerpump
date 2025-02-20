@@ -1,23 +1,42 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { TrendingUp, Brain, Bot, Twitter } from 'lucide-react';
+import { Bot, Twitter, Github, Brain } from 'lucide-react';
 
 const HeroSection = () => {
   return (
     <div className="relative z-10 py-16 text-center">
-      <a 
-        href="https://x.com/HackerPump" 
-        target="_blank" 
-        rel="noopener noreferrer"
-        className="inline-block mb-4"
-      >
-        <Twitter className="h-7 w-7 text-primary hover:text-primary/80 transition-colors" />
-      </a>
-      
+      <div className="flex justify-center mb-6 gap-2">
+        <a 
+          href="https://x.com/HackerPump" 
+          target="_blank" 
+          rel="noopener noreferrer"
+        >
+          <Button 
+            size="lg"
+            variant="ghost"
+            className="text-primary hover:bg-transparent"
+          >
+            <Twitter className="w-8 h-8" />
+          </Button>
+        </a>
+        <a 
+          href="https://github.com/mokmak24055/betahackerpump.git" 
+          target="_blank" 
+          rel="noopener noreferrer"
+        >
+          <Button 
+            size="lg"
+            variant="ghost"
+            className="text-primary hover:bg-transparent"
+          >
+            <Github className="w-8 h-8" />
+          </Button>
+        </a>
+      </div>
       <div className="flex items-center justify-center gap-2 mb-4">
         <Bot className="w-12 h-12 text-pink-500 animate-pulse" />
-        <h1 className="text-6xl font-bold text-primary text-glow animate-pulse">
+        <h1 className="text-[60px] font-bold text-primary whitespace-nowrap text-glow animate-pulse tracking-tight leading-none">
           HackerPump ($HACK)
         </h1>
       </div>
@@ -40,19 +59,19 @@ const HeroSection = () => {
       <div className="flex gap-4 justify-center mb-8">
         <Button 
           size="lg" 
-          className="bg-pink-500 hover:bg-pink-600 text-black font-bold group flex items-center"
+          className="bg-pink-500 hover:bg-pink-600 text-black font-bold group flex items-center whitespace-nowrap leading-none"
         >
-          $HACK LAUNCH SOON! <TrendingUp className="ml-2 group-hover:translate-y-[-2px] transition-transform" />
+          $HACK LAUNCH SOON!
         </Button>
       </div>
       <div className="flex flex-wrap justify-center gap-4 text-primary/70 text-sm">
-        <span className="flex items-center">
+        <span className="flex items-center whitespace-nowrap">
           <Brain className="w-4 h-4 mr-1" /> AI-Powered
         </span>
         <span>•</span>
-        <span>Community-Driven</span>
+        <span className="whitespace-nowrap">Community-Driven</span>
         <span>•</span>
-        <span>DeFi-Integrated</span>
+        <span className="whitespace-nowrap">DeFi-Integrated</span>
       </div>
     </div>
   );
