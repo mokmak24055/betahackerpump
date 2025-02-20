@@ -40,10 +40,16 @@ const HeroSection = () => {
           HackerPump ($HACK)
         </h1>
       </div>
-      <p className="text-xl mb-4 text-primary/80 max-w-2xl mx-auto">
-        The first AI-powered decentralized news aggregator and sentiment analysis platform. 
-        Where artificial intelligence meets DeFi to reshape the future of information.
-      </p>
+      <div className="text-xl mb-8 max-w-3xl mx-auto font-light leading-relaxed tracking-wide backdrop-blur-sm p-8 rounded-lg border border-primary/10 space-y-4">
+        <p className="text-pink-500 font-medium">
+          The first AI-powered, decentralized news aggregator and sentiment analysis platform.
+        </p>
+        <div className="text-primary/90 text-left space-y-2">
+          <p>🔹 Harnessing AI to deliver real-time market insights</p>
+          <p>🔹 Integrating DeFi to reshape the future of information</p>
+          <p>🔹 Empowering users with data-driven decision-making</p>
+        </div>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 max-w-2xl mx-auto text-primary/70">
         <div className="bg-card/30 p-4 rounded-lg backdrop-blur-sm border border-primary/20">
           <Brain className="w-6 h-6 text-pink-500 mb-2 mx-auto" />
@@ -57,12 +63,18 @@ const HeroSection = () => {
         </div>
       </div>
       <div className="flex gap-4 justify-center mb-8">
-        <Button 
-          size="lg" 
-          className="bg-pink-500 hover:bg-pink-600 text-black font-bold group flex items-center whitespace-nowrap leading-none"
+        <a 
+          href="https://x.com/HackerPump"
+          target="_blank"
+          rel="noopener noreferrer"
         >
-          $HACK LAUNCH SOON!
-        </Button>
+          <Button 
+            size="lg" 
+            className="bg-pink-500 hover:bg-pink-600 text-black font-bold group flex items-center whitespace-nowrap leading-none"
+          >
+            $HACK LAUNCH SOON!
+          </Button>
+        </a>
       </div>
       <div className="flex flex-wrap justify-center gap-4 text-primary/70 text-sm">
         <span className="flex items-center whitespace-nowrap">
