@@ -41,7 +41,8 @@ HackerPump is the first AI-powered, decentralized news aggregator and sentiment 
 
 ## Beta Version
 
-The beta version of HackerPump is now available for public testing! 
+The beta version of HackerPump is now available for public testing.
+
 The platform is continually being improved to maximize its AI-driven capabilities even though it is fully operational. Users may encounter certain performance and accuracy restrictions as we work to improve our trading signals, sentiment analysis, and trend detection. These enhancements are a part of our continuous work to optimize the system and make sure it provides accurate, up-to-date market knowledge as efficiently as possible.
 
 Further enhancements and refinements will be continuously implemented to improve accuracy and performance.
