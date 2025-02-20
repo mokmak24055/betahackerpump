@@ -283,7 +283,10 @@ const TrendAnalysis = ({ trendAnalysis, selectedCrypto = 'bitcoin' }) => {
         <p>
           Analysis for {currentCryptoData.symbol} combines technical indicators, market sentiment, and real-time news impact. 
           Signals are generated using advanced algorithms processing multiple data points including price action, 
-          volume analysis, and social sentiment.
+          volume analysis, and social sentiment. {selectedCrypto === 'bitcoin' ? 
+            "Technical levels and risk metrics are calculated based on BTC-specific historical volatility and current market conditions. Always conduct your own research before making trading decisions." :
+            "Technical levels and risk metrics are calculated based on SOL-specific historical volatility and current market conditions. Always conduct your own research before making trading decisions."
+          }
         </p>
       </div>
     </Card>
