@@ -1,5 +1,5 @@
 
-# HackerPump
+# HackerPump Beta Version ($HACK)
 
 ## Overview
 
