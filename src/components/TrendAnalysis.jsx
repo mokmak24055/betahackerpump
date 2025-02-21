@@ -1,4 +1,3 @@
-
 import { Card } from "@/components/ui/card";
 import { TrendingUp, ChartBar, Signal, Newspaper, Info, Activity, Target, Scale } from 'lucide-react';
 import { Progress } from "@/components/ui/progress";
@@ -14,6 +13,125 @@ const fetchBinancePrices = async () => {
     console.error('Error fetching Binance prices:', error);
     return null;
   }
+};
+
+const generateSignals = (marketProfile, rsi, macdData, levels, currentPrice) => {
+  const signals = [];
+  
+  // More sophisticated trend signal logic
+  const isStrongBuy = (
+    rsi > 40 && rsi < 65 && // RSI in healthy range, not overbought
+    macdData.histogram > 0 && // Positive MACD histogram
+    macdData.macd > macdData.signal && // MACD above signal line
+    marketProfile.trendStrength > 3 && // Strong upward momentum
+    marketProfile.volumeRating === 'High' && // High volume confirmation
+    currentPrice > levels.support[0] && // Price above first support
+    marketProfile.breakoutPotential === 'High' && // High breakout potential
+    marketProfile.riskLevel.level !== 'High' // Not in high risk conditions
+  );
+
+  const isStrongSell = (
+    rsi > 70 && // Overbought conditions
+    macdData.histogram < 0 && // Negative MACD histogram
+    macdData.macd < macdData.signal && // MACD below signal line
+    marketProfile.trendStrength < -3 && // Strong downward momentum
+    currentPrice < levels.resistance[0] // Price below first resistance
+  );
+
+  const isSell = (
+    (rsi > 65 && rsi <= 70) || // Approaching overbought
+    (macdData.histogram < 0 && // Negative MACD histogram
+    marketProfile.trendStrength < -2 && // Moderate downward momentum
+    currentPrice < levels.resistance[1]) || // Below second resistance
+    (marketProfile.riskLevel.level === 'High' && // High risk environment
+    marketProfile.breakoutPotential === 'Low' && // Low breakout potential
+    marketProfile.volumeRating !== 'Low') // Significant volume
+  );
+
+  // Generate more specific signals based on market conditions
+  if (isStrongBuy) {
+    signals.push({
+      type: 'STRONG_BUY',
+      signal: 'Strong Buy - Multiple indicators confirm upward momentum',
+      confidence: 85,
+      conditions: [
+        'RSI in optimal range',
+        'MACD showing upward momentum',
+        'Strong volume confirmation',
+        'Price above key support',
+        'Low risk environment'
+      ]
+    });
+  } else if (isStrongSell) {
+    signals.push({
+      type: 'STRONG_SELL',
+      signal: 'Strong Sell - Market showing significant weakness',
+      confidence: 85,
+      conditions: [
+        'Overbought conditions',
+        'MACD showing strong downward momentum',
+        'Price below key resistance',
+        'Strong downward trend detected',
+        'High volume confirmation'
+      ]
+    });
+  } else if (isSell) {
+    signals.push({
+      type: 'SELL',
+      signal: 'Sell - Market conditions indicate potential dip',
+      confidence: 75,
+      conditions: [
+        'RSI showing weakness',
+        'Negative price momentum',
+        'Below key resistance levels',
+        marketProfile.riskLevel.level === 'High' ? 'High risk environment' : 'Weakening trend',
+        'Volume supports downward movement'
+      ]
+    });
+  } else {
+    // Add neutral or waiting signals
+    signals.push({
+      type: 'NEUTRAL',
+      signal: 'Neutral - Wait for clearer signals',
+      confidence: 60,
+      conditions: [
+        'Mixed indicators',
+        'Insufficient trend strength',
+        'Monitor for development'
+      ]
+    });
+  }
+
+  // Add supporting signals
+  if (rsi < 30) {
+    signals.push({
+      type: 'OVERSOLD',
+      signal: 'Oversold conditions - Watch for reversal',
+      confidence: 75,
+      conditions: ['RSI below 30', 'Potential bounce zone']
+    });
+  }
+
+  if (rsi > 70) {
+    signals.push({
+      type: 'OVERBOUGHT',
+      signal: 'Overbought conditions - Consider taking profits',
+      confidence: 75,
+      conditions: ['RSI above 70', 'Potential resistance zone']
+    });
+  }
+
+  // Volume-based signals
+  if (marketProfile.volumeProfile.volatility > 2) {
+    signals.push({
+      type: 'VOLUME_ALERT',
+      signal: 'High volume detected - Watch for breakout',
+      confidence: 70,
+      conditions: ['Increased volatility', 'Above average volume']
+    });
+  }
+
+  return signals.sort((a, b) => b.confidence - a.confidence);
 };
 
 const TrendAnalysis = ({ trendAnalysis, selectedCrypto = 'bitcoin' }) => {
@@ -125,6 +243,22 @@ const TrendAnalysis = ({ trendAnalysis, selectedCrypto = 'bitcoin' }) => {
     const content = `${story.title} ${story.url || ''} ${story.story_text || ''}`.toLowerCase();
     return currentCryptoData.keywords.some(keyword => content.includes(keyword));
   });
+
+    const technicalData = {
+        signals: generateSignals(
+            {
+                trendStrength: trendAnalysis?.trendStrength || 0,
+                volumeRating: trendAnalysis?.volumeRating || 'Low',
+                breakoutPotential: trendAnalysis?.breakoutPotential || 'Low',
+                riskLevel: trendAnalysis?.riskLevel || { level: 'Low' },
+                volumeProfile: trendAnalysis?.volumeProfile || { volatility: 0 }
+            },
+            technicalIndicators.rsi,
+            technicalIndicators.macd,
+            currentCryptoData.technicalLevels,
+            currentPrice
+        )
+    };
 
   return (
     <Card className="p-6 mb-8 border-2 border-primary bg-card/30 backdrop-blur-sm hover:bg-card/50 transition-all">
@@ -289,6 +423,39 @@ const TrendAnalysis = ({ trendAnalysis, selectedCrypto = 'bitcoin' }) => {
           }
         </p>
       </div>
+
+        <div className="space-y-4 mt-6">
+            <h3 className="text-lg font-semibold text-primary">Trading Signals</h3>
+            <div className="space-y-3">
+                {technicalData.signals.map((signal, index) => (
+                    <div key={index} className="p-4 rounded-lg bg-background/20">
+                        <div className="flex items-center gap-2 mb-2">
+                            <Signal className={`h-5 w-5 ${
+                                signal.type === 'STRONG_BUY' ? 'text-green-500' :
+                                    signal.type === 'STRONG_SELL' ? 'text-red-500' :
+                                        signal.type === 'SELL' ? 'text-red-400' :
+                                            signal.type === 'NEUTRAL' ? 'text-yellow-500' :
+                                                signal.type === 'OVERSOLD' ? 'text-green-400' :
+                                                    signal.type === 'OVERBOUGHT' ? 'text-red-400' :
+                                                        'text-primary'
+                            }`} />
+                            <span className="text-primary font-semibold">{signal.signal}</span>
+                            <span className="ml-auto text-sm text-primary/70">
+                  Confidence: {signal.confidence}%
+                </span>
+                        </div>
+                        <div className="mt-2 space-y-1">
+                            {signal.conditions.map((condition, i) => (
+                                <div key={i} className="flex items-center gap-2 text-sm text-primary/70">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-primary/30" />
+                                    {condition}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
     </Card>
   );
 };
