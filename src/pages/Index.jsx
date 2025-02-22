@@ -21,6 +21,7 @@ const Index = () => {
   const [selectedCrypto, setSelectedCrypto] = useState('all');
   const [trendAnalysis, setTrendAnalysis] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [lastUpdateTime, setLastUpdateTime] = useState(new Date());
   const { toast } = useToast();
 
   const { 
@@ -38,14 +39,18 @@ const Index = () => {
       const analysis = await analyzeTrends(stories);
       console.log("New trend analysis complete:", analysis);
       setTrendAnalysis(analysis);
-      // Update crypto prices (in a real app, this would fetch from an API)
+      
+      // Update crypto prices and simulate market movements
       const now = new Date();
+      setLastUpdateTime(now);
+      
       MAJOR_CRYPTOCURRENCIES[0].currentPrice = 95480.50 + (Math.random() * 200 - 100);
       MAJOR_CRYPTOCURRENCIES[1].currentPrice = 192.35 + (Math.random() * 4 - 2);
       
+      // Show toast notification for updates
       toast({
-        title: "Analysis Updated",
-        description: `Market trend analysis refreshed at ${now.toLocaleTimeString()}`,
+        title: "Signals Updated",
+        description: `Trading signals refreshed at ${now.toLocaleTimeString()}`,
       });
     } catch (error) {
       console.error("Error updating trend analysis:", error);
@@ -59,12 +64,14 @@ const Index = () => {
     }
   };
 
+  // Initial analysis when data is loaded
   useEffect(() => {
     if (data?.hits) {
       updateTrendAnalysis(data.hits);
     }
   }, [data]);
 
+  // Function to handle manual refresh
   const handleRefresh = async () => {
     try {
       const result = await refetch();
@@ -81,14 +88,29 @@ const Index = () => {
     }
   };
 
-  // Auto-refresh the analysis every 5 minutes
+  // Auto-refresh every 2 minutes
   useEffect(() => {
     const intervalId = setInterval(() => {
+      console.log("Auto-refreshing trading signals...");
       handleRefresh();
-    }, 300000); // 5 minutes
+    }, 120000); // 2 minutes
 
     return () => clearInterval(intervalId);
   }, []);
+
+  // Additional refresh on significant news updates
+  useEffect(() => {
+    if (data?.hits && lastUpdateTime) {
+      const newStories = data.hits.filter(story => 
+        new Date(story.created_at) > lastUpdateTime
+      );
+
+      if (newStories.length > 0) {
+        console.log("New stories detected, updating analysis...");
+        updateTrendAnalysis(data.hits);
+      }
+    }
+  }, [data, lastUpdateTime]);
 
   const handleVote = (storyId) => {
     toast({
@@ -126,8 +148,16 @@ const Index = () => {
 
         <div id="trend-analysis-container" className="mt-12 mb-16 space-y-8">
           <h2 className="text-2xl font-bold text-primary mb-4">Market Trend Analysis</h2>
-          <TrendAnalysis trendAnalysis={trendAnalysis} selectedCrypto="bitcoin" />
-          <TrendAnalysis trendAnalysis={trendAnalysis} selectedCrypto="solana" />
+          <TrendAnalysis 
+            trendAnalysis={trendAnalysis} 
+            selectedCrypto="bitcoin"
+            lastUpdate={lastUpdateTime}
+          />
+          <TrendAnalysis 
+            trendAnalysis={trendAnalysis} 
+            selectedCrypto="solana"
+            lastUpdate={lastUpdateTime}
+          />
         </div>
 
         <Roadmap />
