@@ -81,6 +81,15 @@ const Index = () => {
     }
   };
 
+  // Auto-refresh the analysis every 5 minutes
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      handleRefresh();
+    }, 300000); // 5 minutes
+
+    return () => clearInterval(intervalId);
+  }, []);
+
   const handleVote = (storyId) => {
     toast({
       title: "Vote Registered",
@@ -91,9 +100,9 @@ const Index = () => {
   const sortedStories = filterAndSortStories(data?.hits, searchTerm, selectedCrypto, sortBy);
 
   return (
-    <>
-      <div className="container mx-auto p-4 bg-background/80 relative z-10 min-h-screen">
-        <MatrixBackground />
+    <div className="min-h-screen relative">
+      <MatrixBackground />
+      <div className="container mx-auto p-4 relative z-10">
         <PageHeader onRefresh={handleRefresh} isLoading={isFetching || isAnalyzing} />
         <HeroSection />
         <TokenStats />
@@ -124,7 +133,7 @@ const Index = () => {
         <Roadmap />
       </div>
       <Footer />
-    </>
+    </div>
   );
 };
 
