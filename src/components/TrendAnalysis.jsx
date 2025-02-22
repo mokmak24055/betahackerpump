@@ -235,10 +235,6 @@ const TrendAnalysis = ({ trendAnalysis, selectedCrypto = 'bitcoin' }) => {
     stopLoss: Math.round(currentCryptoData.technicalLevels.support1)
   };
 
-  const signalStrength = trendAnalysis.overallSentiment > 0 ? 
-    { label: 'Strong Buy', color: 'text-green-500 bg-green-500/20' } :
-    { label: 'Strong Sell', color: 'text-red-500 bg-red-500/20' };
-
   const filteredStories = (trendAnalysis.sentiments || []).slice(0, 3).filter(story => {
     const content = `${story.title} ${story.url || ''} ${story.story_text || ''}`.toLowerCase();
     return currentCryptoData.keywords.some(keyword => content.includes(keyword));
@@ -259,6 +255,30 @@ const TrendAnalysis = ({ trendAnalysis, selectedCrypto = 'bitcoin' }) => {
             currentPrice
         )
     };
+
+  // Get the highest confidence signal to determine the main signal display
+  const primarySignal = technicalData.signals[0]; // Signals are already sorted by confidence
+
+  const getSignalStrength = (signal) => {
+    switch (signal.type) {
+      case 'STRONG_BUY':
+        return { label: 'Strong Buy', color: 'text-green-500 bg-green-500/20' };
+      case 'STRONG_SELL':
+        return { label: 'Strong Sell', color: 'text-red-500 bg-red-500/20' };
+      case 'SELL':
+        return { label: 'Sell', color: 'text-red-400 bg-red-400/20' };
+      case 'NEUTRAL':
+        return { label: 'Neutral', color: 'text-yellow-500 bg-yellow-500/20' };
+      case 'OVERSOLD':
+        return { label: 'Oversold', color: 'text-green-400 bg-green-400/20' };
+      case 'OVERBOUGHT':
+        return { label: 'Overbought', color: 'text-red-400 bg-red-400/20' };
+      default:
+        return { label: 'Neutral', color: 'text-yellow-500 bg-yellow-500/20' };
+    }
+  };
+
+  const signalStrength = getSignalStrength(primarySignal);
 
   return (
     <Card className="p-6 mb-8 border-2 border-primary bg-card/30 backdrop-blur-sm hover:bg-card/50 transition-all">
