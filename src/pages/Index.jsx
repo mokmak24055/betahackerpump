@@ -32,25 +32,156 @@ const Index = () => {
     isFetching 
   } = useNewsData();
 
+  const calculateVolatilityBands = (price, historicalPrices = []) => {
+    // If no historical prices available, use estimated volatility
+    if (!historicalPrices.length) {
+      return {
+        upperBand: price * 1.02,
+        lowerBand: price * 0.98,
+        volatility: 0.02
+      };
+    }
+
+    // Calculate standard deviation from historical prices
+    const mean = historicalPrices.reduce((a, b) => a + b, 0) / historicalPrices.length;
+    const variance = historicalPrices.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / historicalPrices.length;
+    const volatility = Math.sqrt(variance) / mean;
+
+    return {
+      upperBand: price * (1 + volatility),
+      lowerBand: price * (1 - volatility),
+      volatility
+    };
+  };
+
+  const findNearestSupportResistance = (price, crypto) => {
+    const recentHighs = crypto === 'BTC' ? 
+      [97800, 96400, 95200, 94100] : 
+      [178.50, 175.20, 172.40, 169.80];
+    
+    const recentLows = crypto === 'BTC' ? 
+      [93200, 94300, 95100, 95900] :
+      [168.20, 170.40, 171.90, 173.60];
+
+    // Find nearest support and resistance levels
+    const nearestResistance = recentHighs.find(level => level > price) || price * 1.02;
+    const nearestSupport = recentLows.reverse().find(level => level < price) || price * 0.98;
+
+    return { nearestSupport, nearestResistance };
+  };
+
+  const calculateStopLoss = (signal, currentPrice, crypto) => {
+    // Get volatility bands
+    const { upperBand, lowerBand, volatility } = calculateVolatilityBands(currentPrice);
+    
+    // Get nearest support/resistance levels
+    const { nearestSupport, nearestResistance } = findNearestSupportResistance(currentPrice, crypto);
+    
+    // Calculate ATR-like range
+    const range = Math.abs(nearestResistance - nearestSupport);
+    const atrMultiplier = 1.5; // Adjustable multiplier for stop loss distance
+    
+    let stopLoss;
+    let riskReward;
+
+    switch (signal) {
+      case 'STRONG_BUY': {
+        // Place stop below nearest support, adjusted for volatility
+        const supportBuffer = range * 0.3;
+        stopLoss = Math.min(nearestSupport - supportBuffer, currentPrice - (range * atrMultiplier));
+        riskReward = {
+          ratio: '1:3',
+          potential: {
+            reward: (nearestResistance - currentPrice) * 1.5,
+            risk: currentPrice - stopLoss
+          }
+        };
+        break;
+      }
+      case 'STRONG_SELL': {
+        // Place stop above nearest resistance, adjusted for volatility
+        const resistanceBuffer = range * 0.3;
+        stopLoss = Math.max(nearestResistance + resistanceBuffer, currentPrice + (range * atrMultiplier));
+        riskReward = {
+          ratio: '1:3',
+          potential: {
+            reward: (currentPrice - nearestSupport) * 1.5,
+            risk: stopLoss - currentPrice
+          }
+        };
+        break;
+      }
+      case 'SELL': {
+        // More conservative stop above nearest minor resistance
+        const minorResistanceBuffer = range * 0.2;
+        stopLoss = currentPrice + (range * (atrMultiplier * 0.7));
+        stopLoss = Math.min(stopLoss, nearestResistance + minorResistanceBuffer);
+        riskReward = {
+          ratio: '1:2',
+          potential: {
+            reward: currentPrice - nearestSupport,
+            risk: stopLoss - currentPrice
+          }
+        };
+        break;
+      }
+      default: {
+        // Default to volatility-based stop for other signals
+        const volatilityStop = currentPrice * (1 - volatility * 1.5);
+        stopLoss = Math.max(volatilityStop, nearestSupport - (range * 0.1));
+        riskReward = {
+          ratio: '1:2',
+          potential: {
+            reward: range * 0.8,
+            risk: currentPrice - stopLoss
+          }
+        };
+      }
+    }
+
+    return {
+      stopLoss: Math.round(stopLoss * 100) / 100,
+      riskReward,
+      technicalLevels: {
+        support: nearestSupport,
+        resistance: nearestResistance,
+        volatilityUpper: upperBand,
+        volatilityLower: lowerBand
+      }
+    };
+  };
+
   const updateTrendAnalysis = async (stories) => {
     setIsAnalyzing(true);
     try {
       console.log("Starting new trend analysis calculation...");
       const analysis = await analyzeTrends(stories);
-      console.log("New trend analysis complete:", analysis);
-      setTrendAnalysis(analysis);
       
-      // Update crypto prices and simulate market movements
+      // Update prices and calculate risk analysis for each cryptocurrency
       const now = new Date();
       setLastUpdateTime(now);
       
-      MAJOR_CRYPTOCURRENCIES[0].currentPrice = 95480.50 + (Math.random() * 200 - 100);
-      MAJOR_CRYPTOCURRENCIES[1].currentPrice = 192.35 + (Math.random() * 4 - 2);
+      // Update BTC with more precise calculations
+      const btcPrice = 95480.50 + (Math.random() * 200 - 100);
+      const btcRisk = calculateStopLoss(analysis.btcSignal, btcPrice, 'BTC');
+      MAJOR_CRYPTOCURRENCIES[0].currentPrice = btcPrice;
+      MAJOR_CRYPTOCURRENCIES[0].riskAnalysis = btcRisk;
       
-      // Show toast notification for updates
+      // Update SOL with more precise calculations
+      const solPrice = 192.35 + (Math.random() * 4 - 2);
+      const solRisk = calculateStopLoss(analysis.solSignal, solPrice, 'SOL');
+      MAJOR_CRYPTOCURRENCIES[1].currentPrice = solPrice;
+      MAJOR_CRYPTOCURRENCIES[1].riskAnalysis = solRisk;
+
+      setTrendAnalysis({
+        ...analysis,
+        btcRiskAnalysis: btcRisk,
+        solRiskAnalysis: solRisk
+      });
+      
       toast({
-        title: "Signals Updated",
-        description: `Trading signals refreshed at ${now.toLocaleTimeString()}`,
+        title: "Analysis Updated",
+        description: `Market analysis and risk metrics updated at ${now.toLocaleTimeString()}`,
       });
     } catch (error) {
       console.error("Error updating trend analysis:", error);
@@ -71,7 +202,6 @@ const Index = () => {
     }
   }, [data]);
 
-  // Function to handle manual refresh
   const handleRefresh = async () => {
     try {
       const result = await refetch();
@@ -91,26 +221,12 @@ const Index = () => {
   // Auto-refresh every 2 minutes
   useEffect(() => {
     const intervalId = setInterval(() => {
-      console.log("Auto-refreshing trading signals...");
+      console.log("Auto-refreshing analysis...");
       handleRefresh();
-    }, 120000); // 2 minutes
+    }, 120000);
 
     return () => clearInterval(intervalId);
   }, []);
-
-  // Additional refresh on significant news updates
-  useEffect(() => {
-    if (data?.hits && lastUpdateTime) {
-      const newStories = data.hits.filter(story => 
-        new Date(story.created_at) > lastUpdateTime
-      );
-
-      if (newStories.length > 0) {
-        console.log("New stories detected, updating analysis...");
-        updateTrendAnalysis(data.hits);
-      }
-    }
-  }, [data, lastUpdateTime]);
 
   const handleVote = (storyId) => {
     toast({
