@@ -1,19 +1,21 @@
 
 import { useState, useEffect } from 'react';
-import MatrixBackground from '@/components/MatrixBackground';
-import Footer from '@/components/Footer';
-import HeroSection from '@/components/HeroSection';
-import TokenStats from '@/components/TokenStats';
-import SearchAndSort from '@/components/SearchAndSort';
-import TrendAnalysis from '@/components/TrendAnalysis';
-import NewsGrid from '@/components/NewsGrid';
-import Roadmap from '@/components/Roadmap';
-import PageHeader from '@/components/PageHeader';
 import { useToast } from "@/components/ui/use-toast";
 import { useNewsData } from '@/hooks/useNewsData';
 import { analyzeTrends } from '@/utils/trendAnalysis';
 import { filterAndSortStories } from '@/utils/newsFilters';
 import { MAJOR_CRYPTOCURRENCIES } from '@/constants/crypto';
+import MatrixBackground from '@/components/MatrixBackground';
+import Footer from '@/components/Footer';
+import HeroSection from '@/components/HeroSection';
+import TokenStats from '@/components/TokenStats';
+import SearchAndSort from '@/components/SearchAndSort';
+import NewsGrid from '@/components/NewsGrid';
+import Roadmap from '@/components/Roadmap';
+import PageHeader from '@/components/PageHeader';
+import ChartContainer from '@/components/ChartContainer';
+import { fetchRealTimePrice, fetchHistoricalData } from '@/services/marketDataService';
+import { calculateStopLoss } from '@/services/riskAnalysisService';
 
 const Index = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -22,133 +24,41 @@ const Index = () => {
   const [trendAnalysis, setTrendAnalysis] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [lastUpdateTime, setLastUpdateTime] = useState(new Date());
+  const [btcChartData, setBtcChartData] = useState([]);
+  const [solChartData, setSolChartData] = useState([]);
+  const [dateRange, setDateRange] = useState({
+    startDate: null,
+    endDate: null
+  });
+  const [chartConfig, setChartConfig] = useState({
+    btc: { domain: ['auto', 'auto'] },
+    sol: { domain: ['auto', 'auto'] }
+  });
+  const [btcTimeframe, setBtcTimeframe] = useState('24H');
+  const [solTimeframe, setSolTimeframe] = useState('24H');
   const { toast } = useToast();
+  const { data, isLoading, error, refetch, isFetching } = useNewsData();
 
-  const { 
-    data, 
-    isLoading, 
-    error,
-    refetch,
-    isFetching 
-  } = useNewsData();
-
-  const calculateVolatilityBands = (price, historicalPrices = []) => {
-    // If no historical prices available, use estimated volatility
-    if (!historicalPrices.length) {
-      return {
-        upperBand: price * 1.02,
-        lowerBand: price * 0.98,
-        volatility: 0.02
-      };
+  const handleDateRangeChange = async (crypto, start, end) => {
+    const symbol = crypto.toUpperCase();
+    const startTime = start ? new Date(start).getTime() : null;
+    const endTime = end ? new Date(end).getTime() : null;
+    
+    setDateRange({ startDate: start, endDate: end });
+    
+    const historicalData = await fetchHistoricalData(symbol, startTime, endTime);
+    if (symbol === 'BTC') {
+      setBtcChartData(historicalData);
+    } else if (symbol === 'SOL') {
+      setSolChartData(historicalData);
     }
-
-    // Calculate standard deviation from historical prices
-    const mean = historicalPrices.reduce((a, b) => a + b, 0) / historicalPrices.length;
-    const variance = historicalPrices.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / historicalPrices.length;
-    const volatility = Math.sqrt(variance) / mean;
-
-    return {
-      upperBand: price * (1 + volatility),
-      lowerBand: price * (1 - volatility),
-      volatility
-    };
   };
 
-  const findNearestSupportResistance = (price, crypto) => {
-    const recentHighs = crypto === 'BTC' ? 
-      [97800, 96400, 95200, 94100] : 
-      [178.50, 175.20, 172.40, 169.80];
-    
-    const recentLows = crypto === 'BTC' ? 
-      [93200, 94300, 95100, 95900] :
-      [168.20, 170.40, 171.90, 173.60];
-
-    // Find nearest support and resistance levels
-    const nearestResistance = recentHighs.find(level => level > price) || price * 1.02;
-    const nearestSupport = recentLows.reverse().find(level => level < price) || price * 0.98;
-
-    return { nearestSupport, nearestResistance };
-  };
-
-  const calculateStopLoss = (signal, currentPrice, crypto) => {
-    // Get volatility bands
-    const { upperBand, lowerBand, volatility } = calculateVolatilityBands(currentPrice);
-    
-    // Get nearest support/resistance levels
-    const { nearestSupport, nearestResistance } = findNearestSupportResistance(currentPrice, crypto);
-    
-    // Calculate ATR-like range
-    const range = Math.abs(nearestResistance - nearestSupport);
-    const atrMultiplier = 1.5; // Adjustable multiplier for stop loss distance
-    
-    let stopLoss;
-    let riskReward;
-
-    switch (signal) {
-      case 'STRONG_BUY': {
-        // Place stop below nearest support, adjusted for volatility
-        const supportBuffer = range * 0.3;
-        stopLoss = Math.min(nearestSupport - supportBuffer, currentPrice - (range * atrMultiplier));
-        riskReward = {
-          ratio: '1:3',
-          potential: {
-            reward: (nearestResistance - currentPrice) * 1.5,
-            risk: currentPrice - stopLoss
-          }
-        };
-        break;
-      }
-      case 'STRONG_SELL': {
-        // Place stop above nearest resistance, adjusted for volatility
-        const resistanceBuffer = range * 0.3;
-        stopLoss = Math.max(nearestResistance + resistanceBuffer, currentPrice + (range * atrMultiplier));
-        riskReward = {
-          ratio: '1:3',
-          potential: {
-            reward: (currentPrice - nearestSupport) * 1.5,
-            risk: stopLoss - currentPrice
-          }
-        };
-        break;
-      }
-      case 'SELL': {
-        // More conservative stop above nearest minor resistance
-        const minorResistanceBuffer = range * 0.2;
-        stopLoss = currentPrice + (range * (atrMultiplier * 0.7));
-        stopLoss = Math.min(stopLoss, nearestResistance + minorResistanceBuffer);
-        riskReward = {
-          ratio: '1:2',
-          potential: {
-            reward: currentPrice - nearestSupport,
-            risk: stopLoss - currentPrice
-          }
-        };
-        break;
-      }
-      default: {
-        // Default to volatility-based stop for other signals
-        const volatilityStop = currentPrice * (1 - volatility * 1.5);
-        stopLoss = Math.max(volatilityStop, nearestSupport - (range * 0.1));
-        riskReward = {
-          ratio: '1:2',
-          potential: {
-            reward: range * 0.8,
-            risk: currentPrice - stopLoss
-          }
-        };
-      }
-    }
-
-    return {
-      stopLoss: Math.round(stopLoss * 100) / 100,
-      riskReward,
-      technicalLevels: {
-        support: nearestSupport,
-        resistance: nearestResistance,
-        volatilityUpper: upperBand,
-        volatilityLower: lowerBand
-      }
-    };
+  const handleZoom = (crypto, domain) => {
+    setChartConfig(prev => ({
+      ...prev,
+      [crypto.toLowerCase()]: { domain }
+    }));
   };
 
   const updateTrendAnalysis = async (stories) => {
@@ -157,26 +67,31 @@ const Index = () => {
       console.log("Starting new trend analysis calculation...");
       const analysis = await analyzeTrends(stories);
       
-      // Update prices and calculate risk analysis for each cryptocurrency
       const now = new Date();
       setLastUpdateTime(now);
       
-      // Update BTC with more precise calculations
-      const btcPrice = 95480.50 + (Math.random() * 200 - 100);
-      const btcRisk = calculateStopLoss(analysis.btcSignal, btcPrice, 'BTC');
-      MAJOR_CRYPTOCURRENCIES[0].currentPrice = btcPrice;
-      MAJOR_CRYPTOCURRENCIES[0].riskAnalysis = btcRisk;
+      const btcPrice = await fetchRealTimePrice('BTC');
+      const btcHistorical = await fetchHistoricalData('BTC');
+      if (btcPrice && btcHistorical.length > 0) {
+        const btcRisk = calculateStopLoss(analysis.btcSignal, btcPrice, btcHistorical, btcTimeframe);
+        MAJOR_CRYPTOCURRENCIES[0].currentPrice = btcPrice;
+        MAJOR_CRYPTOCURRENCIES[0].riskAnalysis = btcRisk;
+        setBtcChartData(btcHistorical);
+      }
       
-      // Update SOL with more precise calculations
-      const solPrice = 192.35 + (Math.random() * 4 - 2);
-      const solRisk = calculateStopLoss(analysis.solSignal, solPrice, 'SOL');
-      MAJOR_CRYPTOCURRENCIES[1].currentPrice = solPrice;
-      MAJOR_CRYPTOCURRENCIES[1].riskAnalysis = solRisk;
+      const solPrice = await fetchRealTimePrice('SOL');
+      const solHistorical = await fetchHistoricalData('SOL');
+      if (solPrice && solHistorical.length > 0) {
+        const solRisk = calculateStopLoss(analysis.solSignal, solPrice, solHistorical, solTimeframe);
+        MAJOR_CRYPTOCURRENCIES[1].currentPrice = solPrice;
+        MAJOR_CRYPTOCURRENCIES[1].riskAnalysis = solRisk;
+        setSolChartData(solHistorical);
+      }
 
       setTrendAnalysis({
         ...analysis,
-        btcRiskAnalysis: btcRisk,
-        solRiskAnalysis: solRisk
+        btcRiskAnalysis: MAJOR_CRYPTOCURRENCIES[0].riskAnalysis,
+        solRiskAnalysis: MAJOR_CRYPTOCURRENCIES[1].riskAnalysis
       });
       
       toast({
@@ -195,12 +110,21 @@ const Index = () => {
     }
   };
 
-  // Initial analysis when data is loaded
-  useEffect(() => {
-    if (data?.hits) {
-      updateTrendAnalysis(data.hits);
+  const handleTimeframeChange = async (crypto, newTimeframe) => {
+    if (crypto === 'BTC') {
+      setBtcTimeframe(newTimeframe);
+      const historicalData = await fetchHistoricalData('BTC', null, null, newTimeframe);
+      setBtcChartData(historicalData);
+    } else {
+      setSolTimeframe(newTimeframe);
+      const historicalData = await fetchHistoricalData('SOL', null, null, newTimeframe);
+      setSolChartData(historicalData);
     }
-  }, [data]);
+    
+    if (data?.hits) {
+      await updateTrendAnalysis(data.hits);
+    }
+  };
 
   const handleRefresh = async () => {
     try {
@@ -218,12 +142,17 @@ const Index = () => {
     }
   };
 
-  // Auto-refresh every 2 minutes
+  useEffect(() => {
+    if (data?.hits) {
+      updateTrendAnalysis(data.hits);
+    }
+  }, [data]);
+
   useEffect(() => {
     const intervalId = setInterval(() => {
       console.log("Auto-refreshing analysis...");
       handleRefresh();
-    }, 120000);
+    }, 60000);
 
     return () => clearInterval(intervalId);
   }, []);
@@ -234,8 +163,6 @@ const Index = () => {
       description: "Your vote has been counted!",
     });
   };
-
-  const sortedStories = filterAndSortStories(data?.hits, searchTerm, selectedCrypto, sortBy);
 
   return (
     <div className="min-h-screen relative">
@@ -258,22 +185,41 @@ const Index = () => {
         <NewsGrid 
           isLoading={isLoading}
           error={error}
-          stories={sortedStories}
+          stories={filterAndSortStories(data?.hits, searchTerm, selectedCrypto, sortBy)}
           onVote={handleVote}
         />
 
         <div id="trend-analysis-container" className="mt-12 mb-16 space-y-8">
           <h2 className="text-2xl font-bold text-primary mb-4">Market Trend Analysis</h2>
-          <TrendAnalysis 
-            trendAnalysis={trendAnalysis} 
-            selectedCrypto="bitcoin"
-            lastUpdate={lastUpdateTime}
-          />
-          <TrendAnalysis 
-            trendAnalysis={trendAnalysis} 
-            selectedCrypto="solana"
-            lastUpdate={lastUpdateTime}
-          />
+          <div className="grid grid-cols-1 gap-8">
+            <ChartContainer
+              crypto="BTC"
+              title="Bitcoin (BTC/USDT)"
+              chartData={btcChartData}
+              timeframe={btcTimeframe}
+              onTimeframeChange={handleTimeframeChange}
+              dateRange={dateRange}
+              onDateRangeChange={handleDateRangeChange}
+              chartConfig={chartConfig.btc}
+              onZoom={handleZoom}
+              trendAnalysis={trendAnalysis}
+              lastUpdateTime={lastUpdateTime}
+            />
+
+            <ChartContainer
+              crypto="SOL"
+              title="Solana (SOL/USDT)"
+              chartData={solChartData}
+              timeframe={solTimeframe}
+              onTimeframeChange={handleTimeframeChange}
+              dateRange={dateRange}
+              onDateRangeChange={handleDateRangeChange}
+              chartConfig={chartConfig.sol}
+              onZoom={handleZoom}
+              trendAnalysis={trendAnalysis}
+              lastUpdateTime={lastUpdateTime}
+            />
+          </div>
         </div>
 
         <Roadmap />
