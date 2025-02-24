@@ -1,34 +1,46 @@
 
-import { MAJOR_CRYPTOCURRENCIES } from '@/constants/crypto';
+export const filterAndSortStories = (stories = [], searchTerm = '', selectedCrypto = 'all', sortBy = 'points') => {
+  if (!Array.isArray(stories)) {
+    return [];
+  }
 
-export const filterAndSortStories = (stories, searchTerm, selectedCrypto, sortBy) => {
-  if (!stories) return [];
+  let filtered = [...stories];
 
-  const filteredStories = stories.filter(story => {
-    const content = `${story.title} ${story.url || ''} ${story.story_text || ''}`.toLowerCase();
-    
-    if (selectedCrypto !== 'all') {
-      const cryptoInfo = MAJOR_CRYPTOCURRENCIES.find(c => c.id === selectedCrypto);
-      if (!cryptoInfo?.keywords.some(keyword => content.includes(keyword))) {
-        return false;
+  // Filter by search term
+  if (searchTerm) {
+    const searchLower = searchTerm.toLowerCase();
+    filtered = filtered.filter(story =>
+      story.title.toLowerCase().includes(searchLower) ||
+      story.source.toLowerCase().includes(searchLower)
+    );
+  }
+
+  // Filter by selected cryptocurrency
+  if (selectedCrypto !== 'all') {
+    filtered = filtered.filter(story => {
+      const storyLower = story.title.toLowerCase();
+      switch (selectedCrypto) {
+        case 'bitcoin':
+          return storyLower.includes('bitcoin') || storyLower.includes('btc');
+        case 'solana':
+          return storyLower.includes('solana') || storyLower.includes('sol');
+        default:
+          return true;
       }
-    }
-    
-    return story.title.toLowerCase().includes(searchTerm.toLowerCase());
-  });
+    });
+  }
 
-  const sortedStories = [...filteredStories].sort((a, b) => {
+  // Sort stories
+  return filtered.sort((a, b) => {
     switch (sortBy) {
       case 'points':
         return b.points - a.points;
+      case 'comments':
+        return b.num_comments - a.num_comments;
       case 'date':
         return new Date(b.created_at) - new Date(a.created_at);
-      case 'comments':
-        return (b.num_comments || 0) - (a.num_comments || 0);
       default:
-        return 0;
+        return b.points - a.points;
     }
   });
-
-  return sortedStories.slice(0, 12);
 };
